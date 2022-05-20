@@ -46,9 +46,12 @@ namespace ArchiveTorrents
 
             for (var i = 0; i < torrFiles.Length; i++) {
                 var torrFile = new FileInfo (torrFiles[i]);
+
+                //Console.WriteLine ($"Found file        [{ Magenta (torrFile.Name) }]");
+
                 var torrTorr = Torrent.Load (torrFile.FullName);
                 var torrLargestFile = torrTorr.Files.OrderByDescending (t => t.Length).First ();
-                var torrHashId = torrTorr.InfoHashes.V1.ToHex ().ToLower ();
+                var torrHashId = torrTorr.InfoHashes.V1OrV2.ToHex ().ToLower ();
                 var normalizedName = Path.GetFileNameWithoutExtension (normalizeFileName (torrFile.Name));
 
                 Console.WriteLine ($"Found file        [{ Magenta (torrFile.Name) }], hashId { Green (torrHashId) }");
