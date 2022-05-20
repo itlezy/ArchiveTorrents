@@ -14,9 +14,10 @@ namespace ArchiveTorrents
     class Program
     {
         private const String TORR_EXT_WILDCARD = "*.torrent";
-        private const String TORR_ARCHIVE_DIR = @"x:\torr_archived\";
-        private const String TORR_ARCHIVE_REG = @"!!!!_torrs.lst";
-        private const String TORR_ARCHIVE_FILES_REG = @"!!!!_torrs_files.lst";
+        private const String TORR_ARCHIVE_DIR = @"x:\torr_archived\arc\";
+        private const String TORR_ARCHIVE_DIR_OLD = TORR_ARCHIVE_DIR + @"old\";
+        private const String TORR_ARCHIVE_REG = @"..\!!!!_torrs.lst";
+        private const String TORR_ARCHIVE_FILES_REG = @"..\!!!!_torrs_files.lst";
         private const String TORR_INCOMING_DIR = @"x:\torr_incoming\";
 
         private static String TORR_INPUT_DIR = Environment.GetFolderPath (Environment.SpecialFolder.UserProfile) + @"\Downloads";
@@ -59,7 +60,10 @@ namespace ArchiveTorrents
                 } else if (File.ReadLines (TORR_ARCHIVE_DIR + TORR_ARCHIVE_FILES_REG).Contains (torrLargestFile.Path + "|" + torrLargestFile.Length)) {
                     // remove duplicate if the same file with the same exact length was already in the list
                     Console.WriteLine ($"Duplicate found R [{ Red (torrFile.Name) }], removing..");
-                } else if (Directory.GetFiles (TORR_ARCHIVE_DIR, normalizedName + TORR_EXT_WILDCARD).Length > 0) {
+                } else if (
+                    Directory.GetFiles (TORR_ARCHIVE_DIR, normalizedName + TORR_EXT_WILDCARD).Length > 0 ||
+                    Directory.GetFiles (TORR_ARCHIVE_DIR_OLD, normalizedName + TORR_EXT_WILDCARD).Length > 0
+                    ) {
                     // remove duplicate if the same torrent file exists
                     Console.WriteLine ($"Duplicate found F [{ Red (torrFile.Name) }], removing..");
                 } else {
@@ -73,12 +77,13 @@ namespace ArchiveTorrents
 
                     // copy to incoming folder of torrent client to pick up
                     File.Copy (
-                        torrFile.FullName,
-                        TORR_INCOMING_DIR + torrFile.Name
-                        );
+                                torrFile.FullName,
+                                TORR_INCOMING_DIR + torrFile.Name
+                                );
 
                     // add the hashId to the list, so to be sure we can detect duplicates even if the file-name differs
                     File.AppendAllLines (TORR_ARCHIVE_DIR + TORR_ARCHIVE_REG, new String[] { torrHashId });
+                    // add the largest file name and size to the list, so to be sure we can detect duplicates even if the file-name differs
                     File.AppendAllLines (TORR_ARCHIVE_DIR + TORR_ARCHIVE_FILES_REG, new String[] { torrLargestFile.Path + "|" + torrLargestFile.Length });
                 }
 
