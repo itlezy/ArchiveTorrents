@@ -24,6 +24,43 @@ namespace ArchiveTorrents
 
         static void Main (String[] args)
         {
+            if (args.Length <= 0) {
+                RemDupsAndArchive ();
+            } else {
+                if ("l".Equals (args[0])) {
+                    ListFilesAndLen (args[1]);
+                }
+            }
+        }
+
+        private static void ListFilesAndLen (String inputDir)
+        {
+            // generate the index of files + "|" + size, so to skip dups of files we have no torrent for
+            const int MB_10 = 1024 * 1024 * 10;
+
+            Console.Error.WriteLine ($"Processing Input Directory [{ Green (inputDir)}], looking for files gt than 10Mb..");
+
+            // find files that have been downloaded multiple times, and delete them like "abc (1).torrent"
+            var allFiles = Directory.GetFiles (inputDir, "*.*", SearchOption.AllDirectories);
+
+            for (var i = 0; i < allFiles.Length; i++) {
+                try {
+                    var file = new FileInfo (allFiles[i]);
+
+                    if (file.Length > MB_10 &&
+                        !file.Name.EndsWith ("!qB")) {
+
+                        Console.WriteLine ($"{file.Name + "|" + file.Length}");
+                    }
+
+                } catch (System.IO.FileNotFoundException ex) {
+                    Console.Error.WriteLine ("File name too long {0}", ex.Message);
+                }
+            }
+        }
+
+        private static void RemDupsAndArchive ()
+        {
             Console.WriteLine ($"Processing Input Directory [{ Green (TORR_INPUT_DIR)}], looking for duplicates..");
 
             // find files that have been downloaded multiple times, and delete them like "abc (1).torrent"
@@ -43,6 +80,9 @@ namespace ArchiveTorrents
 
             // find actual torrent files
             var torrFiles = Directory.GetFiles (TORR_INPUT_DIR, TORR_EXT_WILDCARD);
+            var duplicatesCount = 0;
+            var copiedCount = 0;
+            var totalFiles = torrFiles.Length;
 
             for (var i = 0; i < torrFiles.Length; i++) {
                 var torrFile = new FileInfo (torrFiles[i]);
@@ -55,20 +95,23 @@ namespace ArchiveTorrents
                 var normalizedName = Path.GetFileNameWithoutExtension (normalizeFileName (torrFile.Name));
 
                 Console.WriteLine ($"Found file        [{ Magenta (torrFile.Name) }], hashId { Green (torrHashId) }");
-                Console.WriteLine ($"           >      [{ Magenta (torrLargestFile.Path) }], size { Green (torrLargestFile.Length.ToString ()) } ");
+                Console.WriteLine ($"             >    [{ Magenta (torrLargestFile.Path) }], size { Green (torrLargestFile.Length.ToString ()) } ");
 
                 if (File.ReadLines (TORR_ARCHIVE_DIR + TORR_ARCHIVE_REG).Contains (torrHashId)) {
                     // remove duplicate if the same hashId was already in the list
                     Console.WriteLine ($"Duplicate found L [{ Red (torrFile.Name) }], removing..");
+                    duplicatesCount++;
                 } else if (File.ReadLines (TORR_ARCHIVE_DIR + TORR_ARCHIVE_FILES_REG).Contains (torrLargestFile.Path + "|" + torrLargestFile.Length)) {
                     // remove duplicate if the same file with the same exact length was already in the list
                     Console.WriteLine ($"Duplicate found R [{ Red (torrFile.Name) }], removing..");
+                    duplicatesCount++;
                 } else if (
                     Directory.GetFiles (TORR_ARCHIVE_DIR, normalizedName + TORR_EXT_WILDCARD).Length > 0 ||
                     Directory.GetFiles (TORR_ARCHIVE_DIR_OLD, normalizedName + TORR_EXT_WILDCARD).Length > 0
                     ) {
                     // remove duplicate if the same torrent file exists
                     Console.WriteLine ($"Duplicate found F [{ Red (torrFile.Name) }], removing..");
+                    duplicatesCount++;
                 } else {
                     Console.WriteLine ($"Archiving torrent [{ Green (torrFile.Name) }]");
 
@@ -86,8 +129,10 @@ namespace ArchiveTorrents
 
                     // add the hashId to the list, so to be sure we can detect duplicates even if the file-name differs
                     File.AppendAllLines (TORR_ARCHIVE_DIR + TORR_ARCHIVE_REG, new String[] { torrHashId });
-                    // add the largest file name and size to the list, so to be sure we can detect duplicates even if the file-name differs
+                    // add the largest file name and size to the list, so to be sure we can detect duplicates even if the file-name differs or it's the same file in different torrent files
                     File.AppendAllLines (TORR_ARCHIVE_DIR + TORR_ARCHIVE_FILES_REG, new String[] { torrLargestFile.Path + "|" + torrLargestFile.Length });
+
+                    copiedCount++;
                 }
 
                 // delete original file at the end
@@ -96,7 +141,7 @@ namespace ArchiveTorrents
             }
 
             Console.WriteLine ();
-            Console.WriteLine ($"{Green ("It's all good man")}");
+            Console.WriteLine ($"{Green ("It's all good man.") } Duplicates { duplicatesCount }, copied { copiedCount } out of { totalFiles } ");
 
             //Thread.Sleep (4000);
             Console.ReadLine ();
