@@ -27,7 +27,6 @@ namespace ArchiveTorrents
                     "CREATE UNIQUE INDEX \"MTorrFileSummary_UQ\" ON \"MDownloadedTorr\" ( \"FileName\"    ASC, \"Length\"    ASC )"
                 );
 
-                Console.WriteLine ("Unique index created {0}", ins);
             }
 
         }
@@ -35,8 +34,6 @@ namespace ArchiveTorrents
         {
             using (var db = new SQLiteConnection (ac.SDB_DLD_URL)) {
                 var ins = db.InsertAll (files, " OR IGNORE ");
-
-                Console.WriteLine ("Loaded {0} records out of {1} ..", ins, files.Count);
 
                 return ins;
             }
@@ -47,8 +44,6 @@ namespace ArchiveTorrents
         {
             using (var db = new SQLiteConnection (ac.SDB_DLD_URL)) {
                 var ins = db.InsertAll (torrs, " OR IGNORE ");
-
-                Console.WriteLine ("Loaded {0} records out of {1} ..", ins, torrs.Count);
 
                 return ins;
             }

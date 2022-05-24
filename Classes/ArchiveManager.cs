@@ -92,9 +92,9 @@ namespace ArchiveTorrents
                                 );
 
                     // add the hashId to the list, so to be sure we can detect duplicates even if the file-name differs
-                    File.AppendAllLines (c.TORR_ARCHIVE_DIR + c.TORR_ARCHIVE_REG, new String[] { torrHashId });
+                    File.AppendAllLines (c.TORR_ARCHIVE_REG, new String[] { torrHashId });
                     // add the largest file name and size to the list, so to be sure we can detect duplicates even if the file-name differs or it's the same file in different torrent files
-                    File.AppendAllLines (c.TORR_ARCHIVE_DIR + c.TORR_ARCHIVE_FILES_REG, new String[] { torrLargestFile.Path + "|" + torrLargestFile.Length });
+                    File.AppendAllLines (c.TORR_ARCHIVE_FILES_REG, new String[] { torrLargestFile.Path + "|" + torrLargestFile.Length });
 
                     dao.LoadDownloadedFiles (
                         new List<MDownloadedFile> () {
@@ -133,7 +133,9 @@ namespace ArchiveTorrents
         {
             var ff = new IOManager ().ListDownloadedFiles (inputDir);
 
-            dao.LoadDownloadedFiles (ff);
+            var ins = dao.LoadDownloadedFiles (ff);
+
+            Console.WriteLine ("Loaded {0} MDownloadedFiles records out of {1} ..", ins, ff.Count);
         }
 
         /// <summary>
@@ -142,10 +144,17 @@ namespace ArchiveTorrents
         /// <param name="inputDir"></param>
         public void LoadDownloadedTorrents (String inputDir)
         {
+            var ins = 0;
             var ff = new IOManager ().ListDownloadedTorrents (inputDir);
 
-            dao.LoadDownloadedTorrents (ff.MDownloadedTorrs);
-            dao.LoadDownloadedFiles (ff.MDownloadedFiles);
+            ins = dao.LoadDownloadedTorrents (ff.MDownloadedTorrs);
+
+            Console.WriteLine ("Loaded {0} MDownloadedTorrs records out of {1} ..", ins, ff.MDownloadedTorrs.Count);
+
+            ins = dao.LoadDownloadedFiles (ff.MDownloadedFiles);
+
+            Console.WriteLine ("Loaded {0} MDownloadedFiles records out of {1} ..", ins, ff.MDownloadedFiles.Count);
+
         }
 
     }
