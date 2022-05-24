@@ -17,10 +17,12 @@ namespace ArchiveTorrents
 {
     class ArchiveManager
     {
-
         ATConfig c = new ATConfig ();
         DAO dao = new DAO ();
 
+        /// <summary>
+        /// Removes duplicate torrent files by checking the tables of downloaded torrents, downloaded files and the directory archive just in case
+        /// </summary>
         public void RemDupsAndArchive ()
         {
             Console.WriteLine ($"Processing Input Directory [{ Green (c.TORR_INPUT_DIR)}], looking for duplicates..");
@@ -71,7 +73,7 @@ namespace ArchiveTorrents
                     Directory.GetFiles (c.TORR_ARCHIVE_DIR, normalizedName + c.TORR_EXT_WILDCARD).Length > 0 ||
                     Directory.GetFiles (c.TORR_ARCHIVE_DIR_OLD, normalizedName + c.TORR_EXT_WILDCARD).Length > 0
                     ) {
-                    // remove duplicate if the same torrent file exists
+                    // remove duplicate if the same torrent file exists (redundant really at this stage)
                     Console.WriteLine ($"Duplicate found F [{ Red (torrFile.Name) }], removing..");
                     duplicatesCount++;
                 } else {
@@ -123,6 +125,10 @@ namespace ArchiveTorrents
             Console.ReadLine ();
         }
 
+        /// <summary>
+        /// Loads the table of downloaded files (name, size) by scanning a local directory
+        /// </summary>
+        /// <param name="inputDir"></param>
         public void LoadDownloadedFiles (String inputDir)
         {
             var ff = new IOManager ().ListDownloadedFiles (inputDir);
@@ -130,6 +136,10 @@ namespace ArchiveTorrents
             dao.LoadDownloadedFiles (ff);
         }
 
+        /// <summary>
+        /// Loads the table of downloaded torrents (hashId) *and* the table of downloaded files, based on the torrent metadata
+        /// </summary>
+        /// <param name="inputDir"></param>
         public void LoadDownloadedTorrents (String inputDir)
         {
             var ff = new IOManager ().ListDownloadedTorrents (inputDir);
@@ -137,8 +147,6 @@ namespace ArchiveTorrents
             dao.LoadDownloadedTorrents (ff.MDownloadedTorrs);
             dao.LoadDownloadedFiles (ff.MDownloadedFiles);
         }
-
-
 
     }
 }
